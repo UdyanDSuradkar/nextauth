@@ -14,7 +14,7 @@ export async function getGoogleTokens(code: string) {
   return await res.json();
 }
 
-export async function getGoogleUser(access_token: string, id_token: string) {
+export async function getGoogleUser(access_token: string) {
   const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
     headers: { Authorization: `Bearer ${access_token}` },
   });

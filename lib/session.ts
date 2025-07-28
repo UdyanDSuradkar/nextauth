@@ -1,7 +1,13 @@
 import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 
-export async function setUserSession(user: any, response: Response) {
+type UserPayload = {
+  id: string;
+  email: string;
+  role: "user" | "admin" | string; // adjust if you have fixed roles
+};
+
+export async function setUserSession(user: UserPayload, response: Response) {
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const token = await new SignJWT({
     id: user.id,
