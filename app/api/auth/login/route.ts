@@ -1,6 +1,6 @@
-import { db } from "@../../../lib/db";
-import { comparePassword } from "@../../../lib/auth";
-import { signJWT } from "@../../../lib/jwt";
+import { db } from "../../../../lib/db";
+import { comparePassword } from "../../../../lib/auth";
+import { signJWT } from "../../../../lib/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -8,12 +8,12 @@ export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
-    // Check fields
+    // 🧾 Check input fields
     if (!email || !password) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    // Find user
+    // 🧑‍ Find user by email
     const result = await db.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 401 });
     }
 
-    // Compare password
+    // 🔐 Check password
     const isMatch = await comparePassword(password, user.password_hash);
     if (!isMatch) {
       return NextResponse.json(
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create JWT
+    // 🪙 Create JWT
     const token = await signJWT({
       id: user.id,
       email: user.email,
@@ -40,7 +40,11 @@ export async function POST(req: NextRequest) {
       role: user.role,
     });
 
-    // Set HttpOnly cookie
+    // 📍 Determine redirect path based on role
+    const redirectPath =
+      user.role === "admin" ? "/dashboard/admin" : "/dashboard/user";
+
+    // 🍪 Set token in HttpOnly cookie
     const response = NextResponse.json({
       success: true,
       user: {
@@ -48,6 +52,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role,
+        redirect: redirectPath,
       },
     });
 
@@ -61,12 +66,10 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Login error:", error.message);
-    } else {
-      console.error("Unknown login error:", error);
-    }
-
+    console.error(
+      "Login error:",
+      error instanceof Error ? error.message : error
+    );
     return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }
 }

@@ -20,7 +20,8 @@ export default function LoginPage() {
     });
 
     if (res.ok) {
-      router.push("/dashboard/user");
+      const data = await res.json();
+      router.push(data.user.redirect); // ⬅️ use dynamic redirect from backend
     } else {
       const data = await res.json();
       setError(data.error || "Login failed");
@@ -71,6 +72,7 @@ export default function LoginPage() {
           >
             Sign In
           </button>
+
           <div className="space-y-3 mt-6">
             <button
               type="button"
