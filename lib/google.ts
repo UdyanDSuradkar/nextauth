@@ -7,7 +7,7 @@ export async function getGoogleTokens(code: string) {
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
       redirect_uri:
-        "https://nextauth-git-main-udyandsuradkars-projects.vercel.app/api/oauth/google/callback",
+        "https://nextauth-nine-pearl.vercel.app/api/oauth/google/callback",
       grant_type: "authorization_code",
     }),
   });
