@@ -1,5 +1,4 @@
-// app/api/oauth/google/callback/route.ts
-
+//app\api\oauth\google\callback\route.ts
 import { NextResponse } from "next/server";
 import { getGoogleTokens, getGoogleUser } from "@../../../lib/oauth";
 import { db } from "@../../../lib/db";
@@ -8,54 +7,86 @@ import { setUserSession } from "@../../../lib/jwt";
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
+  // const _state = searchParams.get("state"); // Optional: For CSRF protection
 
   if (!code) {
-    console.log("❌ No code found");
-    return NextResponse.json({ error: "No code provided" }, { status: 400 });
+    console.log("❌ No authorization code found in callback URL");
+    return NextResponse.json(
+      { error: "Missing Google auth code" },
+      { status: 400 }
+    );
   }
 
   try {
-    console.log("🔄 Getting Google Tokens...");
-    const { access_token, id_token } = await getGoogleTokens(code);
-    console.log("✅ Tokens received");
+    console.log("🔄 Exchanging code for Google tokens...");
+    const { access_token } = await getGoogleTokens(code);
 
-    console.log("🔄 Getting Google User...");
-    const googleUser = await getGoogleUser(access_token, id_token);
-    console.log("✅ Google User:", googleUser);
+    console.log("✅ Tokens received — Fetching user info...");
+    const googleUser = await getGoogleUser(access_token);
+    console.log("👤 Google User:", googleUser);
 
     const { email, name, sub: providerId } = googleUser;
 
-    console.log("🔍 Checking user in DB...");
+    if (!email || !providerId) {
+      console.warn("⚠️ Missing required Google profile info");
+      return NextResponse.json(
+        { error: "Incomplete Google user profile" },
+        { status: 400 }
+      );
+    }
+
+    console.log("🔍 Checking if user exists in database...");
     const result = await db.query(`SELECT * FROM users WHERE email = $1`, [
       email,
     ]);
     let user = result.rows[0];
 
     if (!user) {
-      console.log("🆕 Creating new user...");
+      console.log("🆕 No user found — creating new user...");
       const insert = await db.query(
-        `INSERT INTO users (email, name) VALUES ($1, $2) RETURNING *`,
-        [email, name]
+        `INSERT INTO users (email, name, role) VALUES ($1, $2, $3) RETURNING *`,
+        [email, name, "user"]
       );
       user = insert.rows[0];
     }
 
-    console.log("🔗 Linking oauth_accounts...");
-    await db.query(
+    console.log("🔗 Linking Google account to user...");
+    const linkResult = await db.query(
       `INSERT INTO oauth_accounts (user_id, provider, provider_account_id)
        VALUES ($1, $2, $3)
-       ON CONFLICT (provider, provider_account_id) DO NOTHING`,
+       ON CONFLICT (provider, provider_account_id) DO NOTHING
+       RETURNING *`,
       [user.id, "google", providerId]
     );
 
-    console.log("🍪 Setting session cookie...");
-    const response = NextResponse.redirect(new URL("/dashboard/user", req.url));
-    await setUserSession(user, response);
+    if (linkResult.rowCount === 0) {
+      console.log("ℹ️ OAuth account already linked.");
+    } else {
+      console.log("✅ OAuth account successfully linked.");
+    }
 
-    console.log("✅ OAuth Success — Redirecting to dashboard!");
+    console.log("🍪 Setting session cookie...");
+    const redirectUrl = new URL("/dashboard/user", req.url);
+    let response = NextResponse.redirect(redirectUrl);
+
+    // ✅ Await the session-setting function
+    response = await setUserSession(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+      response
+    );
+
     return response;
-  } catch (err: any) {
-    console.error("❌ OAuth error:", err.message || err);
-    return NextResponse.json({ error: "OAuth failed" }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("❌ Google OAuth callback error:", message);
+    return NextResponse.json(
+      { error: "Google OAuth failed", detail: message },
+      { status: 500 }
+    );
   }
 }

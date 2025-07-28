@@ -1,5 +1,3 @@
-// app/api/auth/register/route.ts
-
 import { db } from "@../../../lib/db";
 import { hashPassword } from "@../../../lib/auth";
 import { setUserSession } from "@../../../lib/jwt";
@@ -34,8 +32,13 @@ export async function POST(req: Request) {
     await setUserSession(user, res);
 
     return res;
-  } catch (err: any) {
-    console.error("Registration error:", err.message);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Registration error:", error.message);
+    } else {
+      console.error("Unknown error during registration", error);
+    }
+
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }
 }

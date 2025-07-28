@@ -60,8 +60,13 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (err: any) {
-    console.error("Login error:", err.message);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Login error:", error.message);
+    } else {
+      console.error("Unknown login error:", error);
+    }
+
     return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }
 }
