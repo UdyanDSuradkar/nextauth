@@ -6,7 +6,7 @@ export async function GET() {
   const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID!;
   const redirectUri =
     process.env.GITHUB_REDIRECT_URI ||
-    "http://localhost:3000/api/oauth/github/callback";
+    "http://localhost:3000 /api/oauth/github/callback";
 
   const githubAuthUrl = new URL("https://github.com/login/oauth/authorize");
   githubAuthUrl.searchParams.set("client_id", clientId);
