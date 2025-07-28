@@ -5,8 +5,7 @@ import qs from "querystring";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 const GOOGLE_REDIRECT_URI =
-  process.env.GOOGLE_REDIRECT_URI ||
-  "http://localhost:3000/api/oauth/google/callback";
+  "https://nextauth-3aufbmfp2-udyandsuradkars-projects.vercel.app/api/oauth/google/callback";
 
 export async function getGoogleTokens(code: string) {
   const url = "https://oauth2.googleapis.com/token";
@@ -51,8 +50,7 @@ export async function getGoogleUser(access_token: string) {
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID!;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET!;
 const GITHUB_REDIRECT_URI =
-  process.env.GITHUB_REDIRECT_URI ||
-  "http://localhost:3000/api/oauth/github/callback";
+  "https://nextauth-3aufbmfp2-udyandsuradkars-projects.vercel.app/api/oauth/github/callback";
 
 export async function getGitHubTokens(code: string) {
   const url = "https://github.com/login/oauth/access_token";
